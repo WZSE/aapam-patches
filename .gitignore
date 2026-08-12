@@ -123,8 +123,10 @@ gradle-app.setting
 node_modules/
 
 # gradle properties, due to Github token
-./gradle.properties
+/gradle.properties
 
 # Ignore IDEA files
 .idea/
 local.properties
+# Local reference / scratch files (not part of the build or repo)
+scratch/

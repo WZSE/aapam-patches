@@ -1,12 +1,11 @@
-group = "app.template"
+group = "com.github.wzse"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
+        name = "wzse Patches"
         description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
+        source = "git@github.com:WZSE/aapam-patches.git"
+        author = "wzse"
         contact = "na"
         website = "na"
         license = "GPLv3"
