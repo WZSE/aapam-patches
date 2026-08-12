@@ -9,17 +9,24 @@ Click here to add these patches to Morphe: https://morphe.software/add-source?gi
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
+> **[v1.0.0-dev.1](https://github.com/WZSE/aapam-patches/releases/tag/v1.0.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;4 patches total
+<details open>
+<summary>📦 ZEE5 Android TV&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
+<br>
 
-<!-- Do not modify this section by hand. The patch list is generated when release.yml creates a new release.
+**🎯 Supported versions:**
 
-     If you wish for the patches list to be collapsed, then remove the word 'EXPANDED' from the comment tag above.
+| 5.83.2 |
+| :---: |
 
-     If you wish to manually keep this list updated then remove the PATCHES_START and PATCHES_END
-     comment blocks entirely. -->
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable CleverTap](#disable-clevertap) | Prevents the CleverTap analytics SDK from initializing, stopping behavioral tracking and advertising-id (GAID) collection. |  |
+| [Disable Firebase analytics](#disable-firebase-analytics) | Prevents Firebase Analytics from initializing, stopping event and user-property reporting to Google. |  |
+| [Disable ads](#disable-ads) | Removes Google IMA ad insertion (client-side and server-side DAI) from the ZEE5 player. The media source factory is returned DRM-configured but with ad-insertion components never attached, so content and DRM playback are unaffected. |  |
+| [Disable analytics](#disable-analytics) | Disables all third-party analytics (CleverTap, Firebase, Mixpanel, videoanalytics) by short-circuiting the central analytics dispatch method. No tracking data is sent. |  |
 
-#### A list of your patches will automatically be shown here after your first patches release is created.
-
-&nbsp;
+</details>
 
 <!-- PATCHES_END -->
 
