@@ -2,12 +2,12 @@ group = "com.github.wzse"
 
 patches {
     about {
-        name = "wzse Patches"
+        name = "aapam Patches"
         description = "Patches for apps I like"
-        source = "git@github.com:WZSE/aapam-patches.git"
-        author = "wzse"
-        contact = "na"
-        website = "na"
+        source = "https://github.com/WZSE/aapam-patches"
+        author = "WZSE"
+        contact = "https://github.com/WZSE"
+        website = "https://github.com/WZSE/aapam-patches"
         license = "GPLv3"
     }
 }
