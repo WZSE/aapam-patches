@@ -26,10 +26,13 @@
 namespace pvfilter {
 
 struct RemoteStripResult {
+    static constexpr int kMaxRemoteDiagnostics = 8;
+    static constexpr int kRemoteKeySummarySize = 192;
+
     bool found_marker = false;   // "intraTitlePlaylist":[ was found in the buffer
     bool complete = false;       // the array parsed to a closing ']' with no truncated element
-    bool modified = false;       // at least one Remote element was blanked
-    int remote_items = 0;        // count of Remote elements blanked
+    bool modified = false;       // at least one Remote element was neutralized
+    int remote_items = 0;        // count of Remote elements neutralized
     int total_items = 0;         // count of elements in the array (informational)
 
     // DIAGNOSTIC (truncated case only): how many FULLY-CLOSED Remote elements
@@ -52,6 +55,15 @@ struct RemoteStripResult {
     // PATH 2 (empty the resolved response) instead of structural blanking here,
     // which desynced the player timeline (issue #14 restart). See hooks.cpp.
     int gva_skipped = 0;
+
+    // Read-only diagnostics. Each entry contains top-level JSON key names only;
+    // values such as URLs, IDs, and tokens are never copied or logged.
+    int remote_diag_count = 0;
+    char remote_keys[kMaxRemoteDiagnostics][kRemoteKeySummarySize] = {};
+    bool remote_has_get_video_ads[kMaxRemoteDiagnostics] = {};
+    bool remote_has_iad_path[kMaxRemoteDiagnostics] = {};
+    size_t remote_start[kMaxRemoteDiagnostics] = {};
+    size_t remote_end[kMaxRemoteDiagnostics] = {};
 };
 
 // Cheap pre-check used to gate the hot path before the full scan: does the
@@ -79,5 +91,25 @@ bool find_intra_title_playlist(const char* buf, size_t len, size_t* out_marker_p
 RemoteStripResult strip_remote_items(char* buf, size_t len,
                                      bool blank_truncated_complete = false,
                                      bool apply = true);
+
+// EXPERIMENT. Not called by the shipping build.
+//
+// Empty the urlsInPriorityOrder array of every getVideoAds Remote break, so the
+// app cannot resolve that break at all. This is the alternative to emptying the
+// resolved response. It is compiled unconditionally so the host harness can
+// evaluate it on real captured payloads.
+//
+// Byte length is preserved. Returns the number of breaks altered.
+int empty_remote_resolver_urls(char* buf, size_t len, bool apply = true);
+
+// EXPERIMENT. Not called by the shipping build.
+//
+// Keep the resolver URL intact but overwrite the adDeliverySessionId value with
+// same-length synthetic text. The break stays resolvable in shape, the literal
+// getVideoAds survives so our own protection still recognises the break, and the
+// request itself can never match a real ad session.
+//
+// Byte length is preserved. Returns the number of breaks altered.
+int corrupt_remote_resolver_session(char* buf, size_t len, bool apply = true);
 
 } // namespace pvfilter

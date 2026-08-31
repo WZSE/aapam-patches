@@ -13,6 +13,10 @@
 #define PV_SKIP_GVA_REMOTES 0
 #endif
 
+#ifndef PV_REMOTE_DIAG
+#define PV_REMOTE_DIAG 0
+#endif
+
 namespace pvfilter {
 
 namespace {
@@ -88,6 +92,46 @@ bool is_remote_type(const char* s, size_t start, size_t end) {
         }
     }
     return false;
+}
+
+bool contains_bytes(const char* s, size_t start, size_t end,
+                    const char* needle, size_t needle_len) {
+    if (end < start || needle_len > end - start) return false;
+    for (size_t p = start; p + needle_len <= end; ++p) {
+        if (memcmp(s + p, needle, needle_len) == 0) return true;
+    }
+    return false;
+}
+
+// Copy top-level object key names into a comma-separated summary. Values are
+// skipped and never copied, so logs cannot expose URLs, IDs, or tokens.
+void collect_key_names(const char* s, size_t start, size_t end, char* out, size_t out_len) {
+    if (out_len == 0) return;
+    out[0] = '\0';
+    if (start >= end || s[start] != '{') return;
+    size_t i = skip_ws(s, end, start + 1);
+    size_t used = 0;
+    while (i < end && s[i] != '}') {
+        if (s[i] != '"') return;
+        size_t key_end = scan_val(s, end, i);
+        if (key_end == kTrunc || key_end < i + 2) return;
+        size_t colon = skip_ws(s, end, key_end);
+        if (colon >= end || s[colon] != ':') return;
+
+        if (used > 0 && used + 1 < out_len) out[used++] = ',';
+        for (size_t p = i + 1; p + 1 < key_end && used + 1 < out_len; ++p) {
+            char c = s[p];
+            out[used++] = (c >= 0x20 && c <= 0x7e && c != ',') ? c : '?';
+        }
+        out[used] = '\0';
+
+        size_t value = skip_ws(s, end, colon + 1);
+        size_t value_end = scan_val(s, end, value);
+        if (value_end == kTrunc) return;
+        i = skip_ws(s, end, value_end);
+        if (i < end && s[i] == ',') i = skip_ws(s, end, i + 1);
+        else if (i < end && s[i] != '}') return;
+    }
 }
 
 struct Elem {
@@ -231,10 +275,23 @@ RemoteStripResult strip_remote_items(char* buf, size_t len, bool blank_truncated
     for (size_t k = 0; k < pr.elem_count; ++k) {
         const Elem& el = pr.elems[k];
         if (!el.is_remote) continue;
+#if PV_REMOTE_DIAG
+        if (result.remote_diag_count < RemoteStripResult::kMaxRemoteDiagnostics) {
+            int d = result.remote_diag_count++;
+            collect_key_names(buf, el.start, el.end, result.remote_keys[d],
+                              RemoteStripResult::kRemoteKeySummarySize);
+            result.remote_has_get_video_ads[d] =
+                contains_bytes(buf, el.start, el.end, "getVideoAds", 11);
+            result.remote_has_iad_path[d] =
+                contains_bytes(buf, el.start, el.end, "/iad_", 5);
+            result.remote_start[d] = el.start;
+            result.remote_end[d] = el.end;
+        }
+#endif
 #if PV_SKIP_GVA_REMOTES
         // getVideoAds-resolved Remote: leave in place for PATH 2 to empty the
         // resolved response (geometry-safe). Removing it here desyncs PeriodTailor.
-        if (memmem(buf + el.start, el.end - el.start, "getVideoAds", 11) != nullptr) {
+        if (contains_bytes(buf, el.start, el.end, "getVideoAds", 11)) {
             ++result.gva_skipped;
             continue;
         }
@@ -250,6 +307,99 @@ RemoteStripResult strip_remote_items(char* buf, size_t len, bool blank_truncated
         result.remote_items = blanked_count;
     }
     return result;
+}
+
+int empty_remote_resolver_urls(char* buf, size_t len, bool apply) {
+    if (buf == nullptr || len == 0) return 0;
+    size_t marker_pos = 0;
+    if (!find_intra_title_playlist(buf, len, &marker_pos)) return 0;
+    ParseResult pr;
+    if (!parse_complete(buf, len, marker_pos + kMarkerLen - 1, pr)) return 0;
+
+    constexpr char kKey[] = "\"urlsInPriorityOrder\"";
+    constexpr size_t kKeyLen = sizeof(kKey) - 1;
+
+    int changed = 0;
+    for (size_t k = 0; k < pr.elem_count; ++k) {
+        const Elem& el = pr.elems[k];
+        if (!el.is_remote) continue;
+        if (!contains_bytes(buf, el.start, el.end, "getVideoAds", 11)) continue;
+
+        for (size_t p = el.start; p + kKeyLen <= el.end; ++p) {
+            if (memcmp(buf + p, kKey, kKeyLen) != 0) continue;
+            size_t q = skip_ws(buf, el.end, p + kKeyLen);
+            if (q >= el.end || buf[q] != ':') break;
+            q = skip_ws(buf, el.end, q + 1);
+            if (q >= el.end || buf[q] != '[') break;
+            size_t close = scan_val(buf, el.end, q);
+            if (close == kTrunc || close <= q + 1) break;
+            if (apply) memset(buf + q + 1, ' ', close - q - 2);
+            ++changed;
+            break;
+        }
+    }
+    return changed;
+}
+
+int corrupt_remote_resolver_session(char* buf, size_t len, bool apply) {
+    if (buf == nullptr || len == 0) return 0;
+    size_t marker_pos = 0;
+    if (!find_intra_title_playlist(buf, len, &marker_pos)) return 0;
+    ParseResult pr;
+    if (!parse_complete(buf, len, marker_pos + kMarkerLen - 1, pr)) return 0;
+
+    constexpr char kKey[] = "adDeliverySessionId=";
+    constexpr size_t kKeyLen = sizeof(kKey) - 1;
+
+    int changed = 0;
+    for (size_t k = 0; k < pr.elem_count; ++k) {
+        const Elem& el = pr.elems[k];
+        if (!el.is_remote) continue;
+        if (!contains_bytes(buf, el.start, el.end, "getVideoAds", 11)) continue;
+
+        bool touched = false;
+        for (size_t p = el.start; p + kKeyLen <= el.end; ++p) {
+            if (memcmp(buf + p, kKey, kKeyLen) != 0) continue;
+            size_t v = p + kKeyLen;
+            // The value runs to the next query separator or the closing quote.
+            size_t e = v;
+            while (e < el.end && buf[e] != '&' && buf[e] != '"') ++e;
+            if (e <= v) { p = v; continue; }
+            if (apply) {
+                // Same length, URL-safe, obviously synthetic, and never a real
+                // session. Deterministic so repeated copies stay identical.
+                for (size_t i = v; i < e; ++i) buf[i] = "0123456789abcdef"[(i - v) & 0xF];
+            }
+            touched = true;
+            p = e;
+        }
+
+        if (touched) {
+            // Bound the cost of the failed resolution. A rejected session should
+            // fail fast, but do not rely on that: clamp the retry budget too.
+            // Both edits keep the byte count identical. JSON permits whitespace
+            // after the colon, so " 250" is a legal same-width replacement for
+            // "1750" (a leading zero would not be).
+            constexpr char kTimeout[]    = "\"timeoutInMs\":1750";
+            constexpr char kTimeoutFast[] = "\"timeoutInMs\": 250";
+            constexpr size_t kTimeoutLen = sizeof(kTimeout) - 1;
+            for (size_t p = el.start; p + kTimeoutLen <= el.end; ++p) {
+                if (memcmp(buf + p, kTimeout, kTimeoutLen) != 0) continue;
+                if (apply) memcpy(buf + p, kTimeoutFast, kTimeoutLen);
+                break;
+            }
+            constexpr char kAttempts[]     = "\"maxAttemptsPerUrl\":2";
+            constexpr char kAttemptsOnce[] = "\"maxAttemptsPerUrl\":1";
+            constexpr size_t kAttemptsLen = sizeof(kAttempts) - 1;
+            for (size_t p = el.start; p + kAttemptsLen <= el.end; ++p) {
+                if (memcmp(buf + p, kAttempts, kAttemptsLen) != 0) continue;
+                if (apply) memcpy(buf + p, kAttemptsOnce, kAttemptsLen);
+                break;
+            }
+            ++changed;
+        }
+    }
+    return changed;
 }
 
 } // namespace pvfilter

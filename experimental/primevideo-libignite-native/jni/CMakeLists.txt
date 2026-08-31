@@ -34,6 +34,7 @@ add_library(pvhook SHARED
     hooks.cpp
     got_hook.cpp
     remote_strip.cpp
+    ad_response.cpp
 )
 target_include_directories(pvhook PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -47,18 +48,18 @@ target_include_directories(pvhook PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # "count-gate" was prototyped and rejected — it corrupts the bundle download; see
 # hooks.cpp.)
 #
-# Issue #14 restart fix (verified on-device 2026-08-14, Onn 4K, Reacher):
-#   PV_SKIP_GVA_REMOTES — strip_remote_items LEAVES intraTitlePlaylist Remote ad
-#                         items that resolve via /cdp/getVideoAds, so the app
-#                         resolves them and PATH 2 (PV_EMPTY_REGOLITH) empties the
-#                         resolved response via the app's clean empty-break path.
-#                         Structurally blanking them (the old behavior) left the
-#                         player's PeriodTailor a full-ad-length gap it filled with
-#                         non-existent media -> content restarted to the beginning
-#                         while the timeline kept running, subtitles dropped, and
-#                         seeking across the gap buffer-locked ("something went
-#                         wrong"). See remote_strip.cpp / hooks.cpp.
-target_compile_definitions(pvhook PRIVATE PV_EMPTY_REGOLITH=1 PV_SKIP_GVA_REMOTES=1)
+# Preserve getVideoAds Remote objects unchanged so the app can resolve each ad
+# break normally. Empty only complete source and destination responses that
+# match the strict ad-decision JSON schema; do not depend on code addresses.
+target_compile_definitions(pvhook PRIVATE
+    PV_EMPTY_REGOLITH=1
+    PV_SKIP_GVA_REMOTES=1
+    PV_REMOTE_DIAG=1
+    PV_RESPONSE_DIAG=1
+    PV_MUTATE_CONFIRMED_GVA_SOURCE=1
+    PV_BLANK_TRUNCATED_ADS=1
+    PV_CORRUPT_GVA_SESSION=1
+)
 
 find_library(log-lib log)
 target_link_libraries(pvhook PRIVATE ${log-lib})

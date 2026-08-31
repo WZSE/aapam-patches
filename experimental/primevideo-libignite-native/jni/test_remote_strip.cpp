@@ -21,6 +21,53 @@ static bool all_spaces(const std::string& s, size_t start, size_t end) {
 }
 
 int main() {
+#if PV_REMOTE_DIAG
+    // Preserve the real getVideoAds Remote shape unchanged for downstream
+    // response diagnostics. Direct Remote handling remains unchanged.
+    {
+        std::string in =
+          "{\"intraTitlePlaylist\":["
+          "{\"type\":\"Main\",\"startMs\":0},"
+          "{\"type\":\"Remote\",\"adId\":\"direct\",\"urls\":[\"https://y/iad_1.mpd\"]},"
+          "{\"type\":\"Remote\",\"resolutionConstraints\":{\"maxMsInAdvance\":49098},"
+          "\"urlsInPriorityOrder\":[\"/cdp/getVideoAds?adMarkerId=mid\",\"/cdp/getVideoAds?failover=true\"],"
+          "\"shouldShowOnScrubBar\":true,\"caching\":{\"timeToLive\":\"PT24H\"}},"
+          "{\"type\":\"Main\",\"startMs\":100}"
+          "]}";
+        std::string buf = in;
+        auto r = pvfilter::strip_remote_items(&buf[0], buf.size());
+        CHECK(r.modified && r.remote_items == 1, "diag: direct Remote removed");
+        CHECK(r.gva_skipped == 1, "diag: getVideoAds Remote preserved");
+        CHECK(r.remote_diag_count == 2, "diag: both Remote entries recorded");
+        CHECK(std::string(r.remote_keys[0]) == "type,adId,urls",
+              "diag: direct Remote key names collected");
+        CHECK(std::string(r.remote_keys[1]) ==
+              "type,resolutionConstraints,urlsInPriorityOrder,shouldShowOnScrubBar,caching",
+              "diag: getVideoAds Remote key names collected");
+        CHECK(r.remote_has_iad_path[0] && !r.remote_has_get_video_ads[0],
+              "diag: direct delivery indicators classified");
+        CHECK(r.remote_has_get_video_ads[1] && !r.remote_has_iad_path[1],
+              "diag: getVideoAds delivery indicators classified");
+        CHECK(r.remote_end[0] > r.remote_start[0] &&
+              in.substr(r.remote_start[0], r.remote_end[0] - r.remote_start[0]).find("\"adId\":\"direct\"") != std::string::npos,
+              "diag: direct Remote object range recorded");
+        CHECK(r.remote_end[1] > r.remote_start[1] &&
+              in.substr(r.remote_start[1], r.remote_end[1] - r.remote_start[1]).find("getVideoAds") != std::string::npos,
+              "diag: getVideoAds Remote object range recorded");
+        CHECK(buf.find("/cdp/getVideoAds") != std::string::npos,
+              "diag: resolver URLs preserved");
+        CHECK(buf.find("\"shouldShowOnScrubBar\":true") != std::string::npos,
+              "diag: scrub-bar metadata preserved");
+        CHECK(buf.find("\"resolutionConstraints\":{\"maxMsInAdvance\":49098}") != std::string::npos,
+              "diag: resolution constraints preserved");
+        CHECK(buf.size() == in.size(), "diag: buffer length unchanged");
+        CHECK(std::string(r.remote_keys[0]).find("https") == std::string::npos,
+              "diag: values are not copied into key summary");
+    }
+
+    std::printf(g_fail == 0 ? "ALL TESTS PASSED (0 failure(s))\n" : "%d FAILURE(S)\n", g_fail);
+    return g_fail == 0 ? 0 : 1;
+#else
     // ── 1. Basic: Main, Remote, Remote, Main -> both Remotes blanked, same length ──
     {
         std::string in =
@@ -241,4 +288,5 @@ int main() {
 
     std::printf(g_fail == 0 ? "ALL TESTS PASSED (0 failure(s))\n" : "%d FAILURE(S)\n", g_fail);
     return g_fail == 0 ? 0 : 1;
+#endif
 }
