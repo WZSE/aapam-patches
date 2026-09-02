@@ -1,9 +1,8 @@
 // got_hook.cpp — see got_hook.h for the rationale.
 //
-// ELF32 / ARM. Locates a library by name via dl_iterate_phdr, walks its
-// PT_DYNAMIC to find the symbol/string tables and the PLT relocation table
-// (.rel.plt), matches a JUMP_SLOT reloc by symbol name, then rewrites that GOT
-// slot to point at our proxy.
+// ARM32/ELF32 and ARM64/ELF64. Locates a library by name via dl_iterate_phdr,
+// walks its PT_DYNAMIC to find the symbol/string tables and PLT relocations,
+// matches a JUMP_SLOT by symbol name, then rewrites that GOT slot.
 
 #include "got_hook.h"
 
@@ -23,8 +22,13 @@
 namespace pvgot {
 namespace {
 
-// R_ARM_JUMP_SLOT is the relocation type for PLT/GOT entries on ARM32.
-constexpr unsigned kRArmJumpSlot = 22;
+#if defined(__aarch64__)
+constexpr unsigned kJumpSlot = R_AARCH64_JUMP_SLOT;
+using PltRel = ElfW(Rela);
+#else
+constexpr unsigned kJumpSlot = R_ARM_JUMP_SLOT;
+using PltRel = ElfW(Rel);
+#endif
 
 struct FindCtx {
     const char* lib_substr;
@@ -83,17 +87,27 @@ int iter_cb(struct dl_phdr_info* info, size_t /*size*/, void* data) {
              info->dlpi_name, (void*)symtab, (void*)strtab, (void*)jmprel, pltrelsz);
         return 1;
     }
-    if (pltrel != DT_REL) {
-        // ARM32 uses REL (no addend) for PLT relocs. Guard against surprises.
-        LOGE("got: %s PLT reloc type is not DT_REL (%ld)", info->dlpi_name, (long)pltrel);
+#if defined(__aarch64__)
+    constexpr ElfW(Sword) kExpectedPltRel = DT_RELA;
+#else
+    constexpr ElfW(Sword) kExpectedPltRel = DT_REL;
+#endif
+    if (pltrel != kExpectedPltRel) {
+        LOGE("got: %s unexpected PLT reloc type (%ld, expected %ld)",
+             info->dlpi_name, (long)pltrel, (long)kExpectedPltRel);
         return 1;
     }
 
-    const size_t count = pltrelsz / sizeof(ElfW(Rel));
-    const auto* rel = reinterpret_cast<const ElfW(Rel)*>(jmprel);
+    const size_t count = pltrelsz / sizeof(PltRel);
+    const auto* rel = reinterpret_cast<const PltRel*>(jmprel);
     for (size_t i = 0; i < count; i++) {
-        if (ELF32_R_TYPE(rel[i].r_info) != kRArmJumpSlot) continue;
-        uint32_t symidx = ELF32_R_SYM(rel[i].r_info);
+#if defined(__aarch64__)
+        if (ELF64_R_TYPE(rel[i].r_info) != kJumpSlot) continue;
+        const size_t symidx = ELF64_R_SYM(rel[i].r_info);
+#else
+        if (ELF32_R_TYPE(rel[i].r_info) != kJumpSlot) continue;
+        const size_t symidx = ELF32_R_SYM(rel[i].r_info);
+#endif
         const char* name = strtab + symtab[symidx].st_name;
         if (strcmp(name, ctx->sym) != 0) continue;
         ctx->got_slot = reinterpret_cast<void**>(bias + rel[i].r_offset);

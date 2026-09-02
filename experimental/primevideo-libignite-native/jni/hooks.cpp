@@ -53,7 +53,12 @@ constexpr bool kApplyWrites = (PV_DRY_RUN == 0);
 // every copy, wide enough to cover real intraTitlePlaylist buffers (~40-68KB
 // observed) with headroom.
 constexpr size_t kMinScanLen = 512;
-constexpr size_t kMaxScanLen = 262144;
+// 6.23.23 schedules were about 65 KB and arrived complete. 6.24.5 schedules are
+// several times larger: a session showed marker=12 complete=2 trunc=10 with
+// max_n=261637, sitting just under the old 262144 gate. Anything above the gate
+// was dropped before it could be examined, so the schedule never reached the
+// code in a usable state. Raised to match the response scan limit.
+constexpr size_t kMaxScanLen = 1048576;
 constexpr size_t kObservedGvaCopySite = 0xaea9cf;  // Diagnostic only; never a behavior gate.
 
 // Maximum payload bytes per log line. logcat silently truncates long messages:
@@ -83,6 +88,7 @@ std::atomic<uint64_t> g_response_dump_id{0};
 std::atomic<uint64_t> g_response_skipped{0};
 std::atomic<uint64_t> g_trunc_ads_blanked{0};
 std::atomic<uint64_t> g_session_corrupted{0};
+std::atomic<uint64_t> g_oversize_schedule{0};
 std::atomic<uint64_t> g_schedule_dumped{0};
 std::atomic<size_t> g_last_dumped_n{0};
 std::atomic<uint64_t> g_source_attempted{0};
@@ -326,7 +332,21 @@ inline bool maybe_empty_regolith(void*, size_t, const void*, const char*) { retu
 
 void maybe_strip(const void* src, size_t n, const void* caller, const char* entry) {
     g_calls_total.fetch_add(1, std::memory_order_relaxed);
-    if (src == nullptr || n < kMinScanLen || n > kMaxScanLen) return;
+    if (src == nullptr) return;
+
+    // Report a buffer that carries a schedule but is refused by the size gate.
+    // Without this, an oversized schedule is indistinguishable from no schedule
+    // at all, which is exactly how the 6.24.5 regression stayed invisible.
+    if (n > kMaxScanLen) {
+        const char* p = static_cast<const char*>(src);
+        if (n < (64u << 20) && pvfilter::contains_marker(p, n)) {
+            uint64_t over = g_oversize_schedule.fetch_add(1, std::memory_order_relaxed);
+            if (over < 8) LOGW("PVOVERSIZE schedule rejected by size gate n=%zu limit=%zu",
+                               n, kMaxScanLen);
+        }
+        return;
+    }
+    if (n < kMinScanLen) return;
     if (is_decompress_chunk(n)) { g_skipped_chunk.fetch_add(1, std::memory_order_relaxed); return; }
     maybe_empty_regolith(const_cast<void*>(src), n, caller, entry);   // TV response (dst-side)
     g_calls_in_gate.fetch_add(1, std::memory_order_relaxed);

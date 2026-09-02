@@ -10,7 +10,10 @@ val skipAdsPatch = bytecodePatch(
     name = "Skip ads",
     description = "Multi-layer ad suppression targeting the SSAI schedule, impression reporting, and the Volley network chokepoint.",
 ) {
-    compatibleWith(Constants.COMPATIBILITY)
+    // 6.24.5 repackages the Java dependencies with R8. These four named Java
+    // seams no longer exist there; native libignite suppression remains the
+    // complete ad-blocking implementation for that version.
+    compatibleWith(Constants.COMPATIBILITY_6_23)
 
     dependsOn(primeVideoExtensionPatch)
 
@@ -20,7 +23,7 @@ val skipAdsPatch = bytecodePatch(
         // Hook 1 — media3 ServerSideAdInsertionMediaSource.setAdPlaybackStates()
         //
         // Strips all AdGroups from the incoming SSAI ad schedule before
-        // ExoPlayer sees it. Primary suppression for standard SSAI path.
+        // ExoPlayer sees it. Absent entirely from 6.24.5.
         // ─────────────────────────────────────────────────────────────────────
         SetAdPlaybackStatesMedia3Fingerprint.method.addInstructions(
             0,
@@ -47,9 +50,7 @@ val skipAdsPatch = bytecodePatch(
         // Hook 3 — MetricsTransporter.transmit(SerializedBatch)
         //
         // Returns a fake SUCCESS UploadResult without making any network
-        // request. Amazon's ad server receives no impression delivery data,
-        // preventing it from accurately tracking ad viewing and reducing
-        // scheduled ad load over time.
+        // request, so Amazon receives no impression delivery data.
         //
         // Inline smali constructs UploadResult("SUCCESS", "ok") directly —
         // no extension class needed since UploadResult is in the app's own DEX.
@@ -68,17 +69,13 @@ val skipAdsPatch = bytecodePatch(
         // ─────────────────────────────────────────────────────────────────────
         // Hook 4 — Volley BasicNetwork.performRequest(Request)
         //
-        // Inspects every Volley request's URL host before it leaves the
-        // device. Known ad-decisioning / ad-tracking hosts are rejected with
-        // a real NoConnectionError, which Volley's own RetryPolicy already
-        // knows how to handle gracefully (same as a genuine connectivity
-        // failure) — no faked contract, no hung pipeline.
+        // Rejects known ad-decisioning / ad-tracking hosts with a real
+        // NoConnectionError before any HTTP work happens. Verified firing on
+        // 6.23.23, where it blocked threeplr-*.api.amazonvideo.com.
         //
-        // This is the control-plane equivalent of Hooks 1–3: it catches the
-        // SSAI ad-decisioning call and any other Volley-routed ad traffic
-        // that the AdPlaybackState/metrics hooks don't cover. It does NOT
-        // suppress mid-roll ad segments — those are fetched by ExoPlayer's
-        // own media3 DefaultHttpDataSource, which never touches Volley.
+        // It never sees /cdp/getVideoAds: Ignite fetches ad decisions through
+        // libcurl, which never touches Volley. That call is handled by the
+        // native hook instead.
         // ─────────────────────────────────────────────────────────────────────
         BasicNetworkPerformRequestFingerprint.method.addInstructions(
             0,

@@ -5,9 +5,9 @@ Use this document before changing, building, patching, or installing the Prime V
 ## Confirmed Architecture
 
 - Target package: `com.amazon.amazonvideo.livingroom`.
-- Tested version: `6.23.23+v15.5.0.70-armv7a`.
+- Supported versions: `6.23.23+v15.5.0.70-armv7a` and `6.24.5+v16.0.0.231-allAbis`.
 - Clone package: `com.amazon.amazonvideo.livingroom.mod`.
-- The native hook supports `armeabi-v7a` only.
+- The native hook builds for `armeabi-v7a` and `arm64-v8a`.
 - Kotlin patches modify DEX bytecode and package the native library.
 - Java extension code provides the bytecode-side ad hooks and native loader.
 - C++ code builds `libpvhook.so` and hooks imports in `libignite.so`.
@@ -373,19 +373,29 @@ The Gradle build does not compile the C++ source. Always rebuild and replace the
 
 Native build requirements:
 
-- Android NDK.
+- Android NDK. Default local path: `%USERPROFILE%\3D Objects\Tools\android-ndk-r27c`.
 - CMake.
 - Ninja.
-- ABI: `armeabi-v7a`.
+- ABIs: `armeabi-v7a` and `arm64-v8a`.
 - Android platform: API 23.
 
-Expected native output:
+Expected native outputs:
 
 `experimental/primevideo-libignite-native/jni/build-v7a/libpvhook.so`
+
+`experimental/primevideo-libignite-native/jni/build-arm64/libpvhook.so`
 
 Copy it to:
 
 `patches/src/main/resources/native/armeabi-v7a/libpvhook.so`
+
+`patches/src/main/resources/native/arm64-v8a/libpvhook.so`
+
+Build and copy both ABIs with the persistent NDK:
+
+```powershell
+.\experimental\primevideo-libignite-native\build-native.ps1
+```
 
 Verify that both files have the same SHA-256 hash before building the MPP.
 

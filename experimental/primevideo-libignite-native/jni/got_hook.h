@@ -1,4 +1,4 @@
-// got_hook.h — minimal, self-contained PLT/GOT import hook (ARM32 / ELF32).
+// got_hook.h — minimal, self-contained PLT/GOT import hook (ARM32 and ARM64).
 //
 // Why this exists instead of ShadowHook or ByteHook:
 //   * The ad-data copy inside libignite goes through libc's `memcpy`, which is

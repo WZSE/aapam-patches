@@ -112,4 +112,8 @@ int empty_remote_resolver_urls(char* buf, size_t len, bool apply = true);
 // Byte length is preserved. Returns the number of breaks altered.
 int corrupt_remote_resolver_session(char* buf, size_t len, bool apply = true);
 
+// True when the buffer contains the intraTitlePlaylist marker. Cheap check used
+// to report schedules refused by the copy size gate.
+bool contains_marker(const char* buf, size_t len);
+
 } // namespace pvfilter

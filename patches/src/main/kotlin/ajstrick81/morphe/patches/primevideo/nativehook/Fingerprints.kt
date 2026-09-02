@@ -1,7 +1,6 @@
 package ajstrick81.morphe.patches.primevideo.nativehook
 
 import app.morphe.patcher.Fingerprint
-import com.android.tools.smali.dexlib2.AccessFlags
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Application.onCreate — earliest reliable point to load the native hook lib.
@@ -22,11 +21,16 @@ import com.android.tools.smali.dexlib2.AccessFlags
 // strings/custom predicate that matches the unique onCreate that also calls
 // super.onCreate() on an Application — but keep it anchored to exactly one
 // method so the loadLibrary isn't injected twice.
+//
+// accessFlags is deliberately NOT constrained. Morphe compares access flags
+// exactly, and 6.24.5 changed this method from `public onCreate()V` to
+// `public final onCreate()V`, which broke the match and aborted patching.
+// definingClass + name + parameters + returnType already identify exactly one
+// method in this class, so the flags added brittleness and no selectivity.
 // ─────────────────────────────────────────────────────────────────────────────
 object ApplicationOnCreateFingerprint : Fingerprint(
     definingClass = "Lcom/amazon/primevideo/PrimeVideoApplication;",
     name = "onCreate",
     parameters = emptyList(),
-    returnType = "V",
-    accessFlags = listOf(AccessFlags.PUBLIC)
+    returnType = "V"
 )

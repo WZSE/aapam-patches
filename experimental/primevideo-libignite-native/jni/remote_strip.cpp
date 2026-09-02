@@ -402,4 +402,10 @@ int corrupt_remote_resolver_session(char* buf, size_t len, bool apply) {
     return changed;
 }
 
+bool contains_marker(const char* buf, size_t len) {
+    if (buf == nullptr || len == 0) return false;
+    size_t pos = 0;
+    return find_intra_title_playlist(buf, len, &pos);
+}
+
 } // namespace pvfilter
