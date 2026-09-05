@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/WZSE/aapam-patches/compare/v1.1.0...v1.2.0) (2026-09-05)
+
+### ✨ New Features
+
+* Telegram anti expiry media, but unlike other Paresh patch this shows expired to sender ([9b8156b](https://github.com/WZSE/aapam-patches/commit/9b8156b81f01c606877328bc80e191192a6649e9))
+
 ## [1.2.0-dev.1](https://github.com/WZSE/aapam-patches/compare/v1.1.0...v1.2.0-dev.1) (2026-09-05)
 
 ### ✨ New Features
