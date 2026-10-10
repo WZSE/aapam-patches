@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/WZSE/aapam-patches/compare/v1.3.1...v1.4.0) (2026-10-10)
+
+### ✨ New Features
+
+* add MyGate patches for premium plan unlock and ad blocking ([12f1c2f](https://github.com/WZSE/aapam-patches/commit/12f1c2f230e013414aedd2f3786797fa55691642))
+
 ## [1.4.0-dev.1](https://github.com/WZSE/aapam-patches/compare/v1.3.1...v1.4.0-dev.1) (2026-10-10)
 
 ### ✨ New Features
