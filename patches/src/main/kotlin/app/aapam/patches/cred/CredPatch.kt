@@ -3,7 +3,12 @@ package app.aapam.patches.cred
 import app.aapam.patches.cred.manifest.manifestFixPatch
 import app.aapam.patches.cred.shared.Constants
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 @Suppress("unused")
 val credPatch = bytecodePatch(
@@ -138,6 +143,34 @@ val credPatch = bytecodePatch(
                             return-void
                         """,
                     )
+                }
+            }
+        }
+
+        // 7. Neutralize DexGuard tamper checks in CredFlutterActivity
+        mutableClassDefByOrNull("Lcom/dreamplug/androidapp/CredFlutterActivity;")?.let { credActivity ->
+            credActivity.methods.forEach { method ->
+                val callsSuperOnCreate = method.instructions.any { ins ->
+                    (ins as? ReferenceInstruction)?.reference?.let { ref ->
+                        ref is MethodReference &&
+                            ref.name == "onCreate" &&
+                            ref.parameterTypes == listOf("Landroid/os/Bundle;")
+                    } ?: false
+                }
+                val callsTamperCheck = method.instructions.any { ins ->
+                    (ins as? ReferenceInstruction)?.reference?.toString()?.contains("CrashlyticsController$4") == true
+                }
+                val hasTamperToast = method.instructions.any { ins ->
+                    (ins as? ReferenceInstruction)?.reference?.toString()?.contains("Toast;->makeText") == true
+                }
+
+                if (callsSuperOnCreate || callsTamperCheck || hasTamperToast) {
+                    val ifNeIndices = method.instructions.mapIndexedNotNull { idx, ins ->
+                        if (ins.opcode == Opcode.IF_NE) idx else null
+                    }
+                    ifNeIndices.reversed().forEach { idx ->
+                        method.replaceInstruction(idx, "nop")
+                    }
                 }
             }
         }

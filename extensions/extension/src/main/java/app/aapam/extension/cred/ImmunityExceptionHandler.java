@@ -29,7 +29,7 @@ public final class ImmunityExceptionHandler implements Thread.UncaughtExceptionH
                 return;
             }
             String trace = Log.getStackTraceString(e);
-            if (trace != null && (trace.contains("dex-id-") || trace.contains("SpannedData"))) {
+            if (trace != null && (trace.contains("dex-id-") || trace.contains("SpannedData") || trace.contains("TextRenderer"))) {
                 Log.w(TAG, "Suppressed dynamic payload exception on background thread!", e);
                 return;
             }
