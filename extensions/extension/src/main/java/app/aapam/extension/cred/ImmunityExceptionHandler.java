@@ -22,15 +22,17 @@ public final class ImmunityExceptionHandler implements Thread.UncaughtExceptionH
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         Looper mainLooper = Looper.getMainLooper();
-        if (mainLooper != null && t != mainLooper.getThread() && e instanceof RuntimeException) {
+        if (mainLooper != null && t != mainLooper.getThread()) {
             String msg = e.getMessage();
             if (msg != null && msg.matches("^[0-9]+$")) {
                 Log.w(TAG, "Suppressed watchdog exception on background thread: " + msg, e);
                 return;
             }
             String trace = Log.getStackTraceString(e);
-            if (trace != null && (trace.contains("dex-id-") || trace.contains("SpannedData") || trace.contains("TextRenderer"))) {
-                Log.w(TAG, "Suppressed dynamic payload exception on background thread!", e);
+            if (trace != null && (trace.contains("dex-id-")
+                    || trace.contains("SpannedData")
+                    || trace.contains("TextRenderer"))) {
+                Log.w(TAG, "Suppressed dynamic payload exception on background thread: " + t.getName(), e);
                 return;
             }
         }
