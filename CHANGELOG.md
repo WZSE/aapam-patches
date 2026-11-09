@@ -1,3 +1,9 @@
+## [1.6.0-dev.2](https://github.com/WZSE/aapam-patches/compare/v1.6.0-dev.1...v1.6.0-dev.2) (2026-11-09)
+
+### ✨ New Features
+
+* add Monect PC Link TV patch to unlock premium features ([d14bfad](https://github.com/WZSE/aapam-patches/commit/d14bfad65e7d24ec2bd3008fd02599e54d853155))
+
 ## [1.6.0-dev.1](https://github.com/WZSE/aapam-patches/compare/v1.5.0...v1.6.0-dev.1) (2026-11-09)
 
 ### ✨ New Features
