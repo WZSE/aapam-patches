@@ -9,7 +9,7 @@ Click here to add these patches to Morphe: https://morphe.software/add-source?gi
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.5.0](https://github.com/WZSE/aapam-patches/releases/tag/v1.5.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;17 patches total
+> **[v1.6.0-dev.1](https://github.com/WZSE/aapam-patches/releases/tag/v1.6.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;19 patches total
 <details open>
 <summary>📦 Telegram&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
@@ -113,6 +113,22 @@ Click here to add these patches to Morphe: https://morphe.software/add-source?gi
 | [Prime Video extension](#prime-video-extension) | Integrates the Prime Video ATV extension for ad group skipping. |  |
 
 </details>
+
+</details>
+
+<details open>
+<summary>📦 INDmoney&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**🎯 Supported versions:**
+
+| 9.9.92 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Disable App Inventory Tracking](#disable-app-inventory-tracking) | Prevents INDmoney from querying installed applications, competitor apps, and UPI handlers. |  |
+| [Suppress App Blocked Screen](#suppress-app-blocked-screen) | Neutralizes Talsec RASP callbacks, threat dispatchers, memory map checks, and AppExitTracker to prevent access blocked screens and premature process termination. |  |
 
 </details>
 
