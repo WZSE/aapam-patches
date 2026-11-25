@@ -278,5 +278,38 @@ val credPatch = bytecodePatch(
                 }
             }
         }
+
+        // 8. Stub Tap & Pay status holder class (Lo/putByte;)
+        mutableClassDefByOrNull("Lo/putByte;")?.let { putByteClass ->
+            putByteClass.methods.forEach { method ->
+                if (method.name == "Amount") {
+                    if (method.returnType == "Z") {
+                        method.returnEarly(false)
+                    } else if (method.returnType == "V" && method.parameterTypes == listOf("Z")) {
+                        method.returnEarly()
+                    }
+                }
+            }
+        }
+
+        // 9. Stub in-app card tokenization security check coroutine
+        mutableClassDefByOrNull("Lo/TextLinkScopeExternalSyntheticLambda10$1;")?.let { lambdaClass ->
+            lambdaClass.methods.forEach { method ->
+                when (method.name) {
+                    "invokeSuspend" -> {
+                        if (method.returnType == "Ljava/lang/Object;") {
+                            method.returnEarly(null)
+                        }
+                    }
+                    "Amount" -> {
+                        if (method.returnType == "Ljava/lang/Object;") {
+                            method.returnEarly(null)
+                        } else if (method.returnType == "V") {
+                            method.returnEarly()
+                        }
+                    }
+                }
+            }
+        }
     }
 }
