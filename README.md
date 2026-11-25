@@ -1,6 +1,19 @@
 # aapam patches
 
-Patches for apps I like.
+Patches for apps I like/use or requested by others.
+
+- A special thanks to [ajstrick81](https://github.com/ajstrick81/morphe-androidtv-patches/) for the cleaver idea behind Prime TV patches 
+- I typically wouldn't update the patches to every version updates, unless a new feature is added in major/minor version and we need it. 
+- You can mix my patches with other people patches. I wouldn't do all the features, but only the ones that are not best in other patches. (e.g only one patch in Telegram, because most other features from other devs are good enough for me)
+- For Cred, the patches would work for UPI. However for NFC support:
+  - Your device must meet Strong integrity. Try [Integrity Box](https://github.com/MeowDump/Integrity-Box)
+  - You would need to have [TEESimulator](https://github.com/JingMatrix/TEESimulator) installed 
+    - Cred package should be part of the scope
+    - Operation mode should be 'generation'
+  - Need [SigSpoof](https://github.com/oct888/sigspoof) Vector/Lsposed module
+    - If your devices is Android 14 or less you need a different version of this module that is yet to be merged. [Build yourself](https://github.com/oct888/sigspoof/pull/1)
+
+  - You would need to configure Cred in the module to return original signature: ```MIIDTzCCAjegAwIBAgIEUJk5TTANBgkqhkiG9w0BAQsFADBYMQswCQYDVQQGEwJJTjESMBAGA1UEBxMJQmFuZ2Fsb3JlMRIwEAYDVQQKEwlEcmVhbVBsdWcxETAPBgNVBAsTCENvbnN1bWVyMQ4wDAYDVQQDEwVEcmVhbTAeFw0xODA1MjcxNDUyNThaFw00MzA1MjExNDUyNThaMFgxCzAJBgNVBAYTAklOMRIwEAYDVQQHEwlCYW5nYWxvcmUxEjAQBgNVBAoTCURyZWFtUGx1ZzERMA8GA1UECxMIQ29uc3VtZXIxDjAMBgNVBAMTBURyZWFtMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqsXbPmCpuCidGHCM6ntrOXwlfzl5cC9AXolA0pixCv8g2xkPkqqb7/fqMx8ZMkI65rON1ITwJEP9e9tvZ/4fAqszEk2Q/EN7vXKRKc+/wrDWcgg7XVeNSrQzQxDgeFMJfP64r21A+YqrQM9KUwqeYaJqVjAarOttKvOR80w2HuM22dlYXnxQ/zb/uH4UsBW3nSfsuN79XlVi/TxakGvnwi0A5WpYZoIAyWH5EY5hY+3XNEHTukRsaN2LppDPljzeXJiB7TeTELN5aeki0DCBnwn2J75+PHR0bODClG5VzYBGle/DfpAlz0As6BTbqy+pRt1C8lEqXcukUTJB1cKUsQIDAQABoyEwHzAdBgNVHQ4EFgQUi9wcVbE1LYmwfyxQHL3cbHYoIx8wDQYJKoZIhvcNAQELBQADggEBAH4UgaDVbnFDl27ZjjtwzLW4XJN0EgXPkaN9CWJOs0A4Gf31rQc/tiwveNva8IgFmZKY62IpgwklcOwMSvHlVBW+PlCZtGsAET5XcA1jYat+LlkSO92JNo5nS3OqS8yUtmmMbaqd7aLNrBs1VdFlnIaCVMh/vpnUDfMsRfocc+SAddMtRoU3JwJHVf4Wr13LGwPTRJcvia4zdB3y8CtQk/q1dnEiqacyPaY2Z6vU/FEbixG2hJEF5SbcYNVvQedB8IV4K8OMUMWvN3nBXCohxiZvGMGnXIHcx8xYOPezVXHs1N2sVOqZ78HQZQg1gF7hghWGCnDfHuobP+mPB3nhY2Q=```
 
 ### How to use these patches
 

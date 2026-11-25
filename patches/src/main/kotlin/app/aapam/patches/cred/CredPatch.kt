@@ -15,7 +15,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 @Suppress("unused")
 val credPatch = bytecodePatch(
     name = "Disable Spying & Security Checks",
-    description = "Suppresses background watchdog crashes, stubs app inventory harvesters, bypasses device profiling & root checks, and neutralizes OEM task-killer service flags.",
+    description = "Removes other app querying & root checks, for NFC support check the our readme file.",
 ) {
     compatibleWith(Constants.COMPATIBILITY_CRED)
     dependsOn(manifestFixPatch)
