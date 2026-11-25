@@ -22,7 +22,7 @@ Click here to add these patches to Morphe: https://morphe.software/add-source?gi
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.8.0-dev.1](https://github.com/WZSE/aapam-patches/releases/tag/v1.8.0-dev.1)** · `dev` · 25 patches across 9 apps
+> **[v1.8.0](https://github.com/WZSE/aapam-patches/releases/tag/v1.8.0)** · `main` · 25 patches across 9 apps
 
 | App | Supported Versions | Patches |
 | :--- | :--- | :---: |
